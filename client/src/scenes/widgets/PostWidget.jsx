@@ -4,14 +4,15 @@ import {
   FavoriteOutlined,
   ShareOutlined,
 } from "@mui/icons-material";
-import { Box, Divider, IconButton, Typography, useTheme } from "@mui/material";
+import { Box, Divider, IconButton, Typography, useTheme,Button } from "@mui/material";
+import { useMediaQuery } from '@mui/material';
 import FlexBetween from "../../components/FlexBetween";
 import Friend from "../../components/Friend";
 import WidgetWrapper from "../../components/WidgetWrapper";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setPost } from "../../state/index.js";
-var commentText="";
+
 const PostWidget = ({
   postId,
   postUserId,
@@ -24,6 +25,8 @@ const PostWidget = ({
   comments,
 }) => {
   const [isComments, setIsComments] = useState(false);
+
+  const [comment, setComment] = useState("");
   const dispatch = useDispatch();
   const token = useSelector((state) => state.token);
   const loggedInUserId = useSelector((state) => state.user._id);
@@ -31,9 +34,19 @@ const PostWidget = ({
   const likeCount = Object.keys(likes).length;
 
   const { palette } = useTheme();
+  const isMobile = useMediaQuery('(max-width: 600px)');
   const main = palette.neutral.main;
   const primary = palette.primary.main;
+const handelCommnet =(e)=> {
+  setComment(e.target.value);
+}
 
+const handleSubmit = (e) => {
+  e.preventDefault();
+  patchComment(comment);
+  setComment("");
+  
+}
   const patchLike = async () => {
     const response = await fetch(`http://localhost:3001/posts/${postId}/like`, {
       method: "PATCH",
@@ -55,7 +68,9 @@ const patchComment = async( commentText )=>{
       "Content-Type" : "application/json",
     },
     body: JSON.stringify({ conmentText:commentText }),
-  })
+  });
+  const updatedPost = await response.json();
+  dispatch(setPost({ post: updatedPost }));
 }
   return (
     <WidgetWrapper m="2rem 0">
@@ -89,21 +104,28 @@ const patchComment = async( commentText )=>{
             </IconButton>
             <Typography>{likeCount}</Typography>
           </FlexBetween>
-          <FlexBetween gap="0.3rem">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                console.log(e.target[0].value);
-                console.log(loggedInUserId);
-                 commentText = e.target[0].value;
-
-                // addComment(e.target[0].value,loggedInUserId)
-                patchComment(commentText);
+          
+            <FlexBetween gap = "0.25rem">
+            <Box flexBasis={"60%"}>
+            <form onSubmit={handleSubmit} style={{ display: "inline-flex" }}>
+              <input type="text" placeholder="Add a comment " value = {comment} onChange={handelCommnet} style={{ fontSize: "13px" , borderRadius : "3rem", marginRight: "3px" }}></input>
+{             !isMobile && <Button
+              disabled={!comment}
+              onClick={handleSubmit}
+              sx={{
+                color: palette.background.alt,
+                backgroundColor: palette.primary.main,
+                borderRadius: "3rem",
+                fontSize: isMobile ? '0.8px' : 'default', // Adjust the font size for mobile screens
+                // padding: isMobile ? '0.05rem' : '0.75rem 1.5rem', // Adjust the padding for mobile screens
               }}
             >
-              <input type="text" placeholder="Add a comment "></input>
+              Add
+            </Button>}
             </form>
-          </FlexBetween>
+            </Box>
+            </FlexBetween>
+          
           <FlexBetween gap="0.3rem">
             <IconButton onClick={() => setIsComments(!isComments)}>
               <ChatBubbleOutlineOutlined />
